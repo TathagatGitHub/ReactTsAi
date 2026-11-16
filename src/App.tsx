@@ -1,5 +1,6 @@
 import { useState } from "react";
 import OpenAI from "openai"; 
+import { agent } from "./agent";
 import "./App.css";
 
 type Message = {
@@ -35,6 +36,7 @@ function App() {
     setIsLoading(true);
 
     try {
+      /*
       const response = await client.chat.completions.create({
        // model: "llama-3.3-70b-versatile", // Fast and good free model
         model: "qwen/qwen3.8-27b",
@@ -44,12 +46,32 @@ function App() {
         })),
         temperature: 0.7,
       });
+*/
+// Call the LangGraph agent
+    const result = await agent.invoke({
+      messages: newMessages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+    });
+    // Get the last message from the agent
+    const lastMessage = result.messages[result.messages.length - 1]
 
+    /*
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: response.choices[0]?.message?.content || "No response",
+        content: lastMessage.content || "No response",
       };
+      */
+
+      const assistantMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content: typeof lastMessage.content === "string" 
+        ? lastMessage.content 
+        : JSON.stringify(lastMessage.content),
+    };
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
