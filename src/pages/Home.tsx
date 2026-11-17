@@ -1,6 +1,7 @@
 import { useState } from "react"; 
 import { orchestrator } from "../orchestrator";
 import { searchResume } from "../tools/resumeSearch";
+import { computeCoverage } from "../tools/skillCoverage";
 function Home() {
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState("");
@@ -64,7 +65,9 @@ function Home() {
 };
 
 const handleTestRag = async () => {
-  try {
+  // Temporary hard-coded JD skills (Agent 1 will supply these later)
+  const jdSkills = ["Azure", "React", "TypeScript", "LangGraph", ".NET", "C#", "Kubernetes"];
+ /* try {
     const hits = await searchResume("Azure React TypeScript LangGraph .NET");
     console.log("Hits:", hits);
     setResult(
@@ -74,7 +77,25 @@ const handleTestRag = async () => {
             .map((h) => `${h.fileName} | score ${h.score.toFixed(2)} | ${h.content.length} chars`)
             .join("  ;  ")
     );
-  } catch (error) {
+  }*/ 
+ try {
+    const hits = await searchResume(jdSkills.join(" "));
+    if (hits.length === 0) {
+      setResult("No results found");
+      return;
+    }
+    const top = hits[0]; // best-ranked resume = our RAG context
+    const coverage = computeCoverage(jdSkills, top.content);
+    console.log("Coverage:", coverage);
+
+    setResult(
+      `${top.fileName} | BM25 ${top.score.toFixed(2)} | ` +
+      `Coverage ${coverage.matched.length}/${jdSkills.length} = ${coverage.percent}% ` +
+      `${coverage.isGood ? "✅ Good context" : "❌ Weak context"} | ` +
+      `Missing: ${coverage.missing.join(", ") || "none"}`
+    );
+  }
+    catch (error) {
     console.error(error);
     setResult("ERROR: " + String(error));
   }
