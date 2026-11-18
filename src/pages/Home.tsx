@@ -2,11 +2,13 @@ import { useState } from "react";
 import { orchestrator } from "../orchestrator";
 import { searchResume } from "../tools/resumeSearch";
 import { computeCoverage } from "../tools/skillCoverage";
+import { useNavigate } from "react-router";
 function Home() {
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState("");
   const [threadId, setThreadId] = useState("");
   const [isPaused, setIsPaused] = useState(false);
+  const navigate = useNavigate();
 
   const handleStart = async () => {
     if (!prompt.trim()) {
@@ -20,10 +22,10 @@ function Home() {
       const newThreadId = crypto.randomUUID();
       setThreadId(newThreadId);
        const finalState = await orchestrator.invoke(
-  {
-    userPrompt: prompt,
-    fileContent: "Invoice #1001 from Acme Corp\nAmount: $500\nDue: Dec 1",
-  },
+      {
+        userPrompt: prompt,
+        fileContent: "Invoice #1001 from Acme Corp\nAmount: $500\nDue: Dec 1",
+      },
   { configurable: { thread_id: newThreadId } }
 );
         
@@ -60,6 +62,14 @@ function Home() {
     const resumedState = await orchestrator.invoke(null, config);
     console.log("Resumed state:", resumedState);
 
+    // 3. Did it pause again (at approval2)?
+    const snapshot = await orchestrator.getState(config);
+    if (snapshot.next.includes("approval2")) {
+      //setResult(resumedState.agent2Result + "  ⏸ Paused, waiting for your approval");
+      //setIsPaused(true);
+      navigate(`/agent2/${threadId}`);
+      return;
+    }
     setIsPaused(false);
     setResult(`Decision: ${decision} → next step: ${resumedState.currentStep}`);
 };

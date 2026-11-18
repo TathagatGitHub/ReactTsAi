@@ -5,7 +5,7 @@ export type CoverageResult = {
   isGood: boolean;
 };
 
-const THRESHOLD = 70; // % needed to call the context "good"
+export const THRESHOLD = 70; // % needed to call the context "good"
 
 // Escape characters like . + # so skills such as ".NET" or "C#" work in a regex
 function escapeRegex(text: string): string {
